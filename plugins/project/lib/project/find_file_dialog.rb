@@ -1,8 +1,11 @@
+
 require 'set'
 
 module Redcar
   class Project
-    class Fuzzy
+
+    class FindFileDialog < FilterListDialog
+
       # Matches all files with the search string  
       #
       # == Parameters:
@@ -16,7 +19,9 @@ module Redcar
       # == Returns::
       # array of all the files that match the path
       #
-      def self.match(text, files)
+      # TODO - sort matches by score
+      #
+      def match_files(text, files)
         files.select do |file_name| 
           match_file(text, file_name)
         end
@@ -37,7 +42,9 @@ module Redcar
       # == Returns::
       # true on positive match, false on negative
       #
-      def self.match_file(text, file_name)
+      # TODO - return match score
+      #
+      def match_file(text, file_name)
         pattern_path = text.split("/")
         file_path = file_name.split("/")
         
@@ -55,7 +62,7 @@ module Redcar
           
           while true
             matched = false
-            if Fuzzy.match_string(pattern, file)
+            if match_string(pattern, file)
               pattern = pattern_path.shift 
               matched = true
             end
@@ -65,33 +72,17 @@ module Redcar
             return true if pattern_path.empty? && matched
           end
         else
-          Fuzzy.match_string(pattern, file)
+          match_string(pattern, file)
         end      
       end
       
       
       # Fuzzy match on two strings
-      # returns true if they match, false otherwise
-      def self.match_string(text, string)
-        return false if string == nil
-        pattern = text.split ""
-        target = string.split ""
-        last = 0
-        
-        while not pattern.empty?
-          letter = pattern.shift
-          i = target.index(letter)
-          return false unless i
-          
-          last = i + 1
-          target = target[last..-1]
-        end
-        true
+      def match_string(text, string)
+        re = make_regex(text)
+        re =~ string
       end
       
-    end  
-
-    class FindFileDialog < FilterListDialog
       def self.storage
         @storage ||= begin
           storage = Plugin::Storage.new('find_file_dialog')
@@ -197,7 +188,10 @@ module Redcar
 
       def find_files(text, directories)
         files = project.all_files.sort.select {|fn| not ignore_file?(fn)}
-        Fuzzy.match(text.gsub(/\s/, ""), files)
+        match_files(text.gsub(/\s/, ""), files)
+        # filter_and_rank_by(files, text.gsub(/\s/, "")) do |fn|
+           # fn.split("/").last
+        # end
       end
     end
   end
