@@ -6,20 +6,18 @@ module Redcar
 
     class FindFileDialog < FilterListDialog
 
-      # Matches all files with the search string  
+      # Matches all files with the search string
       #
-      # == Parameters:
-      # text::
+      # @param [String] text
       #  Search string, can contain full file name with path or just the file name.
       #  Name of each directory in the path doesn't have to be specified exactly.
       #
-      # files::
-      #  Array of files to match the search string
+      # @param [String] files Array of files to match the search string
       #
-      # == Returns::
+      # @return [Array<String>]
       # array of all the files that match the path
       #
-      # TODO - sort matches by score
+      # @todo Sort matches by calculated match score
       #
       def match_files(text, files)
         files.select do |file_name| 
@@ -29,20 +27,20 @@ module Redcar
       
       
       # Test if search string matches file name
-      # 
-      # == Parameters:
-      # text::
-      #  Search string, can contain full file name with path or just the file name.
-      #  Name of each directory in the path doesn't have to be specified exactly.
       #
-      # file_name::
+      # @param [String] text
+      #  Search string, can contain full file name with path or
+      #  just the file name. Name of each directory in the path doesn't
+      #  have to be specified exactly.
+      #
+      # @param [String] file_name
       #  File name of the target file, can contain either just the file name,
       #  or the whole path.
       #
-      # == Returns::
-      # true on positive match, false on negative
+      # @return [Boolean]
+      #  true on positive match, false on negative
       #
-      # TODO - return match score
+      # @todo Calculate and return match score
       #
       def match_file(text, file_name)
         pattern_path = text.split("/")
@@ -68,16 +66,22 @@ module Redcar
             end
             file = file_path.shift
             
-            return false if file_path.empty? && !matched          
+            return false if file_path.empty? && !matched
             return true if pattern_path.empty? && matched
           end
         else
           match_string(pattern, file)
-        end      
+        end
       end
-      
-      
+
+
       # Fuzzy match on two strings
+      #
+      # @param [String] text search string
+      # @param [String] string target to be searched
+      #
+      # @todo Benchmark to see if regex is the fastest solution
+      #
       def match_string(text, string)
         re = make_regex(text)
         re =~ string
@@ -186,12 +190,22 @@ module Redcar
         }.compact
       end
 
+      # Filters through the project files
+      #
+      # @todo
+      # Take directories into account, instead of just
+      # searching through the whole project.
+      #
       def find_files(text, directories)
         files = project.all_files.sort.select {|fn| not ignore_file?(fn)}
-        match_files(text.gsub(/\s/, ""), files)
-        # filter_and_rank_by(files, text.gsub(/\s/, "")) do |fn|
-           # fn.split("/").last
-        # end
+
+        # Files are returned as absolute paths
+        project_path = project.home_dir + "/"
+        # by removing the home dir prefix for filtering
+        files.map! { |file| file.sub(project_path, "") }
+        res = match_files(text.gsub(/\s/, ""), files).sort { |a, b| a.length <=> b.length }
+        # and putting it back on filtered results
+        res.map { |file| project_path + file }
       end
     end
   end
