@@ -56,7 +56,7 @@ module Redcar
           # doesn't match if search is deeper than the file, 
           # eg. search: a/b and file is only b
           # or doesn't match the filename
-          return false if file_path.size == 0 || !Fuzzy.match_string(pattern, file)
+          return false if file_path.size == 0 || !match_string(pattern, file)
           pattern = pattern_path.shift
           file = file_path.shift
           
