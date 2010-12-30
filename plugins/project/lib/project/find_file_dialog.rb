@@ -17,12 +17,12 @@ module Redcar
       # @return [Array<String>]
       # array of all the files that match the path
       #
-      # @todo Sort matches by calculated match score
+      # @todo Optimize the match algorithm
       #
       def match_files(text, files)
-        files.select do |file_name| 
-          match_file(text, file_name)
-        end
+        res = files.map { |file_name| [file_name, match_file(text, file_name)] }
+        res = res.select { |r| r[1] }.sort { |a, b| b[1] <=> a[1] }
+        res.map { |r| r[0] }
       end
       
       
@@ -37,10 +37,10 @@ module Redcar
       #  File name of the target file, can contain either just the file name,
       #  or the whole path.
       #
-      # @return [Boolean]
-      #  true on positive match, false on negative
+      # @return [Integer]
+      #  match score if match was successful, nil otherwise
       #
-      # @todo Calculate and return match score
+      # @todo Optimize the match algorithm
       #
       def match_file(text, file_name)
         pattern_path = text.split("/")
@@ -48,6 +48,8 @@ module Redcar
         
         pattern = pattern_path.pop
         file = file_path.pop
+        
+        score = 0
         
         # if there is path specified in the search
         if pattern_path && pattern_path.size > 0
@@ -60,14 +62,17 @@ module Redcar
           
           while true
             matched = false
-            if match_string(pattern, file)
+            
+            res = match_string(pattern, file)
+            if res
               pattern = pattern_path.shift 
               matched = true
+              score += res
             end
             file = file_path.shift
             
             return false if file_path.empty? && !matched
-            return true if pattern_path.empty? && matched
+            return score if pattern_path.empty? && matched
           end
         else
           match_string(pattern, file)
@@ -80,11 +85,30 @@ module Redcar
       # @param [String] text search string
       # @param [String] string target to be searched
       #
+      # @return [Integer] match score if match was successful, nil otherwise
+      #
       # @todo Benchmark to see if regex is the fastest solution
       #
       def match_string(text, string)
         re = make_regex(text)
-        re =~ string
+        score = 0
+        last = nil
+        
+        m = string.match(re)
+        return nil unless m
+        
+        m.captures.each_with_index do |capture, index|
+          if index > 0        
+            # FIX - probably doesn't work properly on string with duplicite letters,
+            # still better than nothing though. The string needs to be sliced after each
+            # iteration in order to prevent this            
+            current_index = string.index(capture)
+            last_index = string.index(last)   
+            score += 1 if current_index == last_index + 1
+          end
+          last = capture
+        end
+        score
       end
       
       def self.storage
