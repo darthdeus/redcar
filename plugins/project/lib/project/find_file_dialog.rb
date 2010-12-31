@@ -8,7 +8,7 @@ module Redcar
 
       # Matches all files with the search string
       #
-      # @param [String] text
+      # @param [String] query
       #  Search string, can contain full file name with path or just the file name.
       #  Name of each directory in the path doesn't have to be specified exactly.
       #
@@ -19,8 +19,9 @@ module Redcar
       #
       # @todo Optimize the match algorithm
       #
-      def match_files(text, files)
-        res = files.map { |file_name| [file_name, match_file(text, file_name)] }
+      def match_files(query, files)
+        res = files.map { |file_name| [file_name, match_file(query, file_name)] }
+        # res = files.map { |file_name| [file_name, match_string(text, file_name.gsub("/", ""))] }
         res = res.select { |r| r[1] }.sort { |a, b| b[1] <=> a[1] }
         res.map { |r| r[0] }
       end
@@ -28,7 +29,7 @@ module Redcar
       
       # Test if search string matches file name
       #
-      # @param [String] text
+      # @param [String] query
       #  Search string, can contain full file name with path or
       #  just the file name. Name of each directory in the path doesn't
       #  have to be specified exactly.
@@ -42,8 +43,8 @@ module Redcar
       #
       # @todo Optimize the match algorithm
       #
-      def match_file(text, file_name)
-        pattern_path = text.split("/")
+      def match_file(query, file_name)
+        pattern_path = query.split("/")
         file_path = file_name.split("/")
         
         pattern = pattern_path.pop
@@ -82,15 +83,15 @@ module Redcar
 
       # Fuzzy match on two strings
       #
-      # @param [String] text search string
+      # @param [String] query search string
       # @param [String] string target to be searched
       #
       # @return [Integer] match score if match was successful, nil otherwise
       #
       # @todo Benchmark to see if regex is the fastest solution
       #
-      def match_string(text, string)
-        re = make_regex(text)
+      def match_string(query, string)
+        re = make_regex(query)
         score = 0
         last = nil
         
@@ -99,7 +100,7 @@ module Redcar
         
         m.captures.each_with_index do |capture, index|
           if index > 0        
-            # FIX - probably doesn't work properly on string with duplicite letters,
+            # FIX - probably doesn't work properly on string with duplicate letters,
             # still better than nothing though. The string needs to be sliced after each
             # iteration in order to prevent this            
             current_index = string.index(capture)
