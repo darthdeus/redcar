@@ -30,6 +30,7 @@ require "project/find_file_dialog"
 require "project/manager"
 require "project/recent_directories"
 require "project/sub_project"
+require "project/fuzzy"
 
 module Redcar
   class Project
