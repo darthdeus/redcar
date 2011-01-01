@@ -4,6 +4,12 @@ require 'redcar'
 Redcar.environment = :test
 Redcar.load_unthreaded
 
+Spec::Matchers.define :match_file do |pattern, f|
+  match do |file|
+    match_file(file, pattern)
+  end
+end
+
 def write_dir_contents(dirname, files)
   FileUtils.mkdir_p(dirname)
   files.each do |filename, contents|
