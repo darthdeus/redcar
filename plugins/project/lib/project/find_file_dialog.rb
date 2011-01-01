@@ -122,7 +122,7 @@ module Redcar
         project_path = project.home_dir + "/"
         # by removing the home dir prefix for filtering
         files.map! { |file| file.sub(project_path, "") }
-        res = match_files(text.gsub(/\s/, ""), files).sort { |a, b| a.length <=> b.length }
+        res = Fuzzy.match_files(text.gsub(/\s/, ""), files).sort { |a, b| a.length <=> b.length }
         # and putting it back on filtered results
         res.map { |file| project_path + file }
       end
